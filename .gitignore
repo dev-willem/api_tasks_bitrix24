@@ -1,0 +1,15 @@
+# Ambientes virtuais e cache do Python
+__pycache__/
+*.pyc
+
+# Configurações do IDE
+.idea/
+
+# Arquivos de ambiente
+.env
+
+# Arquivos de exemplo de ambiente (opcional manter)
+# .env.example
+
+# Outras sugestões
+*.log

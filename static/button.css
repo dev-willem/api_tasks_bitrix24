@@ -1,0 +1,29 @@
+.buttons {
+  text-align: center;
+  display: block;
+}
+
+button {
+  padding: 20px 46px;
+  margin: 20px 0;
+  text-align: center;
+  text-transform: uppercase;
+  color: rgb(26, 4, 59);
+  font-size: 16px;
+  font-weight: bold;
+  background-color: transparent;
+  border: 2px solid rgb(26, 4, 59);
+  cursor: pointer;
+  border-radius: 30px;
+  transition: all 0.3s ease; /* Transição suave para tudo */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Corrigido: pseudo-classe correta é :hover, não ::hover */
+button:hover {
+  color: rgb(97, 191, 26);
+  background-color: rgb(26, 4, 59);
+  box-shadow: 0 0 12px rgba(26, 4, 59, 0.5);
+  transform: scale(1.05); /* Leve crescimento */
+}
