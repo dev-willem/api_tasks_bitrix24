@@ -1,0 +1,13 @@
+<tbody id="tabela-corpo">
+    {% if dados %}
+    {% for item in dados %}
+    <tr>
+        {% for coluna in colunas %}
+        <td contenteditable="true">{{ item[coluna] }}</td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    {% endif %}
+</tbody>
+
+<script></script>

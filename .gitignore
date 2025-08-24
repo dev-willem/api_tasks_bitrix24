@@ -8,8 +8,7 @@ __pycache__/
 # Arquivos de ambiente
 .env
 
-# Arquivos de exemplo de ambiente (opcional manter)
-# .env.example
-
-# Outras sugestões
 *.log
+*.csv
+
+compare.json

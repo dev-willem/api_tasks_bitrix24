@@ -1,92 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='button.css') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='button.css') }}"
+    />
     <title>Gerador Bitrix</title>
-</head>
+  </head>
 
-<body>
-<div class="buttons">
-    <button id="gerar-btn" type="button">
-        Gerar Planilha
-    </button>
-</div>
+  <body>
+    <div class="buttons">
+      <button id="gerar-btn" type="button">Gerar Planilha</button>
+    </div>
 
-<div>
-    <h2>Lista de Tarefas Bitrix</h2>
-    <div class="tabela-container">
-        <table>
-            <thead>
+    <div>
+      <h2>Lista de Tarefas Bitrix</h2>
+      <div class="tabela-container">
+        <table id="tabela">
+          <thead>
             <tr>
-                {% for coluna in colunas %}
-                <th>{{ coluna }}</th>
-                {% endfor %}
+              {% for coluna in colunas %}
+              <th>{{ coluna }}</th>
+              {% endfor %}
             </tr>
-            </thead>
-            <tbody id="tabela-corpo">
+          </thead>
+          <tbody id="tabela-corpo">
             {% for item in dados %}
             <tr>
-                {% for coluna in colunas %}
-                <td contenteditable="true">{{ item[coluna] }}</td>
-                {% endfor %}
+              {% for coluna in colunas %}
+              <td contenteditable="true">{{ item[coluna] }}</td>
+              {% endfor %}
             </tr>
             {% endfor %}
-            </tbody>
+          </tbody>
         </table>
+      </div>
     </div>
-</div>
+    <div id="insights" style="margin-top: 20px; font-family: sans-serif"></div>
 
-<div class="buttons">
-    <button id="exportar-btn" type="button">
-        Gerar PDF
-    </button>
-</div>
+    <div class="buttons">
+      <button id="exportar-btn" type="button">Gerar PDF</button>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script>
-    document.getElementById('gerar-btn').addEventListener('click', function (event) {
-        event.preventDefault();
-
-        fetch('/gerar', {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            const colunas = ["ID", "TÍTULO", "RESPONSÁVEL", "SISTEMA", "EQUIPE", "BRANCH", "VALIDAÇÃO", "ABERTURA", "PRAZO", "ÚLTIMA MOV", "ETAPA", "STATUS"];
-            const tbody = document.getElementById('tabela-corpo');
-            tbody.innerHTML = '';
-
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                colunas.forEach(col => {
-                    const cell = document.createElement('td');
-                    cell.textContent = item[col];
-                    cell.contentEditable = "true";
-                    row.appendChild(cell);
-                });
-                tbody.appendChild(row);
-            });
-        });
-    });
-</script>
-<script>
-    document.getElementById("exportar-pdf").addEventListener("click", function () {
-        const elemento = document.querySelector(".tabela-container");
-
-        const opt = {
-            margin:       0.5,
-            filename:     'tarefas-bitrix.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2 },
-            jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
-        };
-
-        html2pdf().set(opt).from(elemento).save();
-    });
-</script>
-
-
-</body>
+    <script src="{{ url_for('static', filename='iterator.js') }}"></script>
+    <script src="{{ url_for('static', filename='insights.js') }}"></script>
+    <script src="{{ url_for('static', filename='pdf.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  </body>
 </html>

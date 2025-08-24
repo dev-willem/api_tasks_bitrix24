@@ -3,12 +3,13 @@ from script import get_tasks
 
 app = Flask(__name__)
 
+COLUNAS = ["ID", "TÍTULO", "RESPONSÁVEL", "SISTEMA", "EQUIPE", "BRANCH", "VALIDAÇÃO", "ABERTURA", "PRAZO", "ÚLTIMA MOV", "ETAPA", "STATUS"]
+
 @app.route("/")
 def index():
-    colunas = ["ID", "TÍTULO", "RESPONSÁVEL", "SISTEMA", "EQUIPE", "BRANCH", "VALIDAÇÃO", "ABERTURA", "PRAZO", "ÚLTIMA MOV", "ETAPA", "STATUS"]
-    return render_template("index.html", colunas=colunas)
+    return render_template("index.html", colunas=COLUNAS)
 
-@app.route("/gerar", methods=["POST"])
+@app.route("/generate")
 def gerar():
     dados = get_tasks()
-    return jsonify(dados)
+    return render_template("table_body.html", colunas=COLUNAS, dados=dados)
