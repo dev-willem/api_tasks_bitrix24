@@ -11,6 +11,7 @@ COMPLETED_TASKS_STATUS_CODE = "5"
 GROUP_NAME = os.getenv('GROUP_NAME')
 USER_ID = os.getenv('USER_ID')
 TOKEN = os.getenv('TOKEN')
+WEBHOOK_URL = f"https://{GROUP_NAME}.bitrix24.com.br/rest/{USER_ID}/{TOKEN}/"
 
 def status_verify(status):
     match status:
@@ -43,8 +44,25 @@ def time_date_format(data_iso):
             return "---"
     return "---"
 
+def false_none(field):
+    if field == False or field == None:
+        field = "---"
+    return field
+
+def get_fields(task_id):
+    response_fields = requests.get(f"{WEBHOOK_URL}task.item.getdata/", params={"taskid": task_id})
+    data_fields = response_fields.json()
+    fields = data_fields.get("result", [])
+    
+    responsavel = false_none(fields.get("UF_AUTO_298159569350", "---"))
+    sistema = false_none(fields.get("UF_AUTO_576718929338", "---"))[0] # por algum motivo vem uma lista de sistemas com apenas 1
+    equipe = false_none(fields.get("UF_AUTO_718901754199", "---"))
+    branch = false_none(fields.get("UF_AUTO_240744770939", "---"))
+    validacao = false_none(fields.get("UF_AUTO_558363595553", "---"))
+    
+    return responsavel, sistema, equipe, branch, validacao
+
 def get_tasks():
-    WEBHOOK_URL = f"https://{GROUP_NAME}.bitrix24.com.br/rest/{USER_ID}/{TOKEN}/"
     tasks_final = []
     
     next_page = None
@@ -52,7 +70,7 @@ def get_tasks():
     while True:
         # Se next_page estiver vazio, é a primeira requisição; caso contrário, continuamos de onde paramos
         params = {"start": next_page} if next_page else {}
-        response = requests.get(f"{WEBHOOK_URL}task.item.list.json/", params=params)
+        response = requests.get(f"{WEBHOOK_URL}task.item.list/", params=params)
         data = response.json()
 
         tasks_final.extend(data.get("result", []))
@@ -85,6 +103,10 @@ def get_tasks():
     for task in tasks_final:
         status = task.get("STATUS")
         if status != COMPLETED_TASKS_STATUS_CODE:
+            task_id = task.get("ID", "")
+            
+            responsavel, sistema, equipe, branch, validacao = get_fields(int(task_id))
+            
             etapa = task.get("REAL_STATUS")
             prazo = time_date_format(task.get("DEADLINE"))
             abertura = time_date_format(task.get("CREATED_DATE"))
@@ -92,13 +114,13 @@ def get_tasks():
             status = status_verify(status)
             etapa = status_verify(etapa)
             tasks_final_dict.append({
-                "ID": task.get("ID", ""),
+                "ID": task_id,
                 "TÍTULO": task.get("TITLE", ""),
-                "RESPONSÁVEL": task.get("RESPONSIBLE_NAME", "") + " " + task.get("RESPONSIBLE_LAST_NAME", ""),
-                "SISTEMA": "---",
-                "EQUIPE": "---",
-                "BRANCH": "---",
-                "VALIDAÇÃO": "---",
+                "RESPONSÁVEL": responsavel,
+                "SISTEMA": sistema,
+                "EQUIPE": equipe,
+                "BRANCH": branch,
+                "VALIDAÇÃO": validacao,
                 "ABERTURA": abertura,
                 "PRAZO": prazo,
                 "ÚLTIMA MOV": ultima_mov,
