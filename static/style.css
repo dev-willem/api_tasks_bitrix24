@@ -51,7 +51,7 @@ td {
 }
 
 td[contenteditable="true"] {
-  background-color: #fffbea;
+  background-color: #fffdf3;
   cursor: text;
   outline: none;
   /* transition removida */

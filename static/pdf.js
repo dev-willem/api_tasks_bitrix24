@@ -16,8 +16,8 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
         theme: 'grid',
         styles: {
             fontStyle: 'bold',
-            fontSize: 6,
-            cellPadding: 3,
+            fontSize: 5,
+            cellPadding: 2,
             halign: 'center',
             valign: 'middle'
         },
@@ -27,7 +27,7 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
             const title = 'Lista de Tarefas Bitrix';
             const textWidth = doc.getTextWidth(title);
             const x = (pageWidth - textWidth) / 2;
-            doc.setFontSize(14);
+            doc.setFontSize(10);
             doc.setFont(undefined, 'bold');
             doc.setTextColor(26, 4, 59);
             doc.text(title, x, 10);

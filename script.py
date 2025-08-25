@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from dotenv import load_dotenv
 import requests
@@ -54,79 +55,75 @@ def get_fields(task_id):
     data_fields = response_fields.json()
     fields = data_fields.get("result", [])
     
+    title = fields.get("TITLE", "")
+    etapa = status_verify(fields.get("REAL_STATUS"))
+    prazo = time_date_format(fields.get("DEADLINE", "---"))
+    abertura = time_date_format(fields.get("CREATED_DATE"))
+    ultima_mov = time_date_format(fields.get("CHANGED_DATE"))
+    
     responsavel = false_none(fields.get("UF_AUTO_298159569350", "---"))
     sistema = false_none(fields.get("UF_AUTO_576718929338", "---"))[0] # por algum motivo vem uma lista de sistemas com apenas 1
     equipe = false_none(fields.get("UF_AUTO_718901754199", "---"))
     branch = false_none(fields.get("UF_AUTO_240744770939", "---"))
     validacao = false_none(fields.get("UF_AUTO_558363595553", "---"))
     
-    return responsavel, sistema, equipe, branch, validacao
+    return title, etapa, prazo, abertura, ultima_mov, responsavel, sistema, equipe, branch, validacao
 
 def get_tasks():
-    tasks_final = []
-    
+    tasks_filtradas = []
     next_page = None
 
     while True:
-        # Se next_page estiver vazio, é a primeira requisição; caso contrário, continuamos de onde paramos
         params = {"start": next_page} if next_page else {}
-        response = requests.get(f"{WEBHOOK_URL}task.item.list/", params=params)
+        response = requests.get(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&", params=params)
         data = response.json()
+        
+        filtradas = [
+            {"ID": item["ID"], "STATUS": item["STATUS"]}
+            for item in data.get("result", [])
+            # if item["STATUS"] != COMPLETED_TASKS_STATUS_CODE # -> filtro aplicado direto na url (inibe necessidade de paginação, pois vem menos que 50)
+        ]
 
-        tasks_final.extend(data.get("result", []))
-        
+        tasks_filtradas.extend(filtradas)
         next_page = data.get("next")
-        
-        print("Tarefas registradas:", len(tasks_final))
-        
+
+        print("Tarefas filtradas com STATUS != '5':", len(tasks_filtradas))
         if not next_page:
             break
 
-    # first_response = requests.get(f"{WEBHOOK_URL}task.item.list.json/")
-    # data_first = first_response.json()
+    print("Iniciando paralelismo para buscar detalhes...")
 
-    # total = data_first.get("total", 0)
-    # page_size = len(data_first.get("result", []))  # normalmente 50
-    # total_pages = math.ceil(total / page_size) if page_size else 1
+    tasks_final = []
 
-    # # calcular as duas últimas páginas
-    # last_pages = [max(0, (total_pages - 2) * page_size), (total_pages - 1) * page_size]
+    def enrich_task(task):
+        task_id = task["ID"]
+        status = status_verify(task["STATUS"])
+        title, etapa, prazo, abertura, ultima_mov, responsavel, sistema, equipe, branch, validacao = get_fields(int(task_id))
 
-    # # buscar as duas últimas páginas
-    # for start in last_pages:
-    #     response = requests.get(f"{WEBHOOK_URL}task.item.list.json/", params={"start": start})
-    #     data = response.json()
-    #     tasks_final.extend(data.get("result", []))
-    #     print(len(tasks_final))
+        return {
+            "ID": task_id,
+            "TÍTULO": title,
+            "RESPONSÁVEL": responsavel,
+            "SISTEMA": sistema,
+            "EQUIPE": equipe,
+            "BRANCH": branch,
+            "VALIDAÇÃO": validacao,
+            "ABERTURA": abertura,
+            "PRAZO": prazo,
+            "ÚLTIMA MOV": ultima_mov,
+            "ETAPA": etapa,
+            "STATUS": status
+        }
 
-    tasks_final_dict = []
-    for task in tasks_final:
-        status = task.get("STATUS")
-        if status != COMPLETED_TASKS_STATUS_CODE:
-            task_id = task.get("ID", "")
-            
-            responsavel, sistema, equipe, branch, validacao = get_fields(int(task_id))
-            
-            etapa = task.get("REAL_STATUS")
-            prazo = time_date_format(task.get("DEADLINE"))
-            abertura = time_date_format(task.get("CREATED_DATE"))
-            ultima_mov = time_date_format(task.get("CHANGED_DATE"))
-            status = status_verify(status)
-            etapa = status_verify(etapa)
-            tasks_final_dict.append({
-                "ID": task_id,
-                "TÍTULO": task.get("TITLE", ""),
-                "RESPONSÁVEL": responsavel,
-                "SISTEMA": sistema,
-                "EQUIPE": equipe,
-                "BRANCH": branch,
-                "VALIDAÇÃO": validacao,
-                "ABERTURA": abertura,
-                "PRAZO": prazo,
-                "ÚLTIMA MOV": ultima_mov,
-                "ETAPA": etapa,
-                "STATUS": status
-            })
+    with ThreadPoolExecutor(max_workers=30) as executor:
+        futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]
 
-    print(f"\n {len(tasks_final_dict)} tarefas armazenadas com sucesso!")
-    return tasks_final_dict
+        for future in as_completed(futures):
+            try:
+                enriched_task = future.result()
+                tasks_final.append(enriched_task)
+            except Exception as e:
+                print("Erro ao processar tarefa:", e)
+
+    print(f"\n{len(tasks_final)} tarefas armazenadas com sucesso!")
+    return tasks_final
