@@ -41,17 +41,18 @@
         </table>
       </div>
     </div>
-    <div id="insights" style="margin-top: 20px; font-family: sans-serif"></div>
+    <div id="insights" class="insights-container"></div>
 
     <div class="buttons">
       <button id="exportar-btn" type="button">Gerar PDF</button>
     </div>
 
-    <script src="{{ url_for('static', filename='iterator.js') }}"></script>
-    <script src="{{ url_for('static', filename='insights.js') }}"></script>
-    <script src="{{ url_for('static', filename='pdf.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script src="{{ url_for('static', filename='iterator.js') }}"></script>
+    <script src="{{ url_for('static', filename='insights.js') }}"></script>
+    <script src="{{ url_for('static', filename='pdf.js') }}"></script>
   </body>
 </html>
