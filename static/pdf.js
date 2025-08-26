@@ -9,7 +9,7 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const marginX = 14;
-  const marginBottom = 20; // margem inferior
+  const marginBottom = 20;
   let finalY = 20;
 
   const colorTitulo = [26, 4, 59]; // rgb(26, 4, 59)
@@ -68,10 +68,6 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
     const fontSizeTitulo = 12;
     const fontSizeNormal = 9;
     const fontSizeTituloSecundario = 10;
-
-    doc.setDrawColor(238, 238, 238);
-    doc.setLineWidth(0.3);
-    doc.line(marginX, finalY - 2, pageWidth - marginX, finalY - 2);
 
     doc.setFontSize(fontSizeTitulo);
     doc.setTextColor(...colorTitulo);

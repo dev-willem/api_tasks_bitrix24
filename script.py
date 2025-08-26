@@ -16,6 +16,10 @@ WEBHOOK_URL = f"https://{GROUP_NAME}.bitrix24.com.br/rest/{USER_ID}/{TOKEN}/"
 
 def status_verify(status):
     match status:
+        case "-3":
+            return "Em andamento"
+        case "-2":
+            return "Não lida"
         case "-1":
             return "Atrasada"
         case "1":

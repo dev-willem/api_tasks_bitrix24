@@ -18,7 +18,7 @@ function gerarInsights() {
       validacao: [],
       prazo: [],
     },
-    statusAtrasada: [], // IDs das linhas com status "Atrasada"
+    statusAtrasada: [],
   };
 
   linhas.forEach((tr) => {
