@@ -3,7 +3,7 @@ from script import get_tasks
 
 app = Flask(__name__)
 
-COLUNAS = ["ID", "TÍTULO", "RESPONSÁVEL", "SISTEMA", "EQUIPE", "BRANCH", "VALIDAÇÃO", "ABERTURA", "PRAZO", "ÚLTIMA MOV", "ETAPA", "STATUS"]
+COLUNAS = ["ID", "FOCO", "CRIADOR", "TASK", "ETAPA", "ETAPA EQUIPE", "ETAPA RESPONSÁVEL", "RESPONSÁVEL", "SISTEMA", "CRIAÇÃO", "ÚLTIMA ATUALIZAÇÃO", "PRAZO"]
 
 @app.route("/")
 def index():

@@ -39,6 +39,48 @@ def status_verify(status):
         case _:
             return "Status desconhecido"
 
+def priority_verify(priority):
+    match priority:
+        case "0":
+            return "Não"
+        case "1":
+            return "Não"
+        case "2":
+            return "Sim"
+
+def stage_verify(stage):
+    match stage:
+        case "651":
+            return "Triagem/Análise"
+        case "1753":
+            return "Aguardando Informações"
+        case "1933":
+            return "Backlog de Produtos"
+        case "1773":
+            return "Refinamento Produtos"
+        case "1755":
+            return "Pronto para desenvolvimento"
+        case "1757":
+            return "Em desenvolvimento"
+        case "1759":
+            return "Code Review"
+        case "1761":
+            return "Deploy em Homologação"
+        case "1763":
+            return "Validação de Sustentação"
+        case "1935":
+            return "Validação de Produtos"
+        case "1769":
+            return "Retorno"
+        case "1765":
+            return "Aguardando Deploy Produção"
+        case "1767":
+            return "Deploy Produção"
+        case "1771":
+            return "Adiada"
+        case "655":
+            return "Concluída"
+        
 def time_date_format(data_iso):
     if data_iso and data_iso.strip():
         try:
@@ -56,22 +98,26 @@ def false_none(field):
 
 def get_fields(task_id):
     response_fields = requests.get(f"{WEBHOOK_URL}task.item.getdata/", params={"taskid": task_id})
+    print(f"{WEBHOOK_URL}task.item.getdata/?taskid={task_id}") # REMOVE AFTER
     data_fields = response_fields.json()
     fields = data_fields.get("result", [])
     
     title = fields.get("TITLE", "")
-    etapa = status_verify(fields.get("REAL_STATUS"))
+    #etapa = status_verify(fields.get("REAL_STATUS"))
     prazo = time_date_format(fields.get("DEADLINE", "---"))
     abertura = time_date_format(fields.get("CREATED_DATE"))
+    estagio = stage_verify(fields.get("STAGE_ID"))
+    print(fields.get("STAGE_ID"))
+    print(estagio)
     ultima_mov = time_date_format(fields.get("CHANGED_DATE"))
-    
+    prioridade = priority_verify(fields.get("PRIORITY"))
+    criado_por = f"{fields.get("CREATED_BY_NAME")} {fields.get("CREATED_BY_LAST_NAME")}"
     responsavel = false_none(fields.get("UF_AUTO_298159569350", "---"))
     sistema = false_none(fields.get("UF_AUTO_576718929338", "---"))[0] # por algum motivo vem uma lista de sistemas com apenas 1
     equipe = false_none(fields.get("UF_AUTO_718901754199", "---"))
-    branch = false_none(fields.get("UF_AUTO_240744770939", "---"))
     validacao = false_none(fields.get("UF_AUTO_558363595553", "---"))
     
-    return title, etapa, prazo, abertura, ultima_mov, responsavel, sistema, equipe, branch, validacao
+    return title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio
 
 def get_tasks():
     tasks_filtradas = []
@@ -79,6 +125,7 @@ def get_tasks():
 
     while True:
         params = {"start": next_page} if next_page else {}
+        print(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&")
         response = requests.get(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&", params=params)
         data = response.json()
         
@@ -102,22 +149,23 @@ def get_tasks():
     def enrich_task(task):
         task_id = task["ID"]
         status = status_verify(task["STATUS"])
-        title, etapa, prazo, abertura, ultima_mov, responsavel, sistema, equipe, branch, validacao = get_fields(int(task_id))
+        title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio = get_fields(int(task_id))
 
         return {
             "ID": task_id,
-            "TÍTULO": title,
+            "FOCO": prioridade,
+            "CRIADOR": criado_por,
+            "TASK": title,
+            "ETAPA": estagio,
+            "ETAPA EQUIPE": equipe, 
+            "ETAPA RESPONSÁVEL": "",
             "RESPONSÁVEL": responsavel,
-            "SISTEMA": sistema,
-            "EQUIPE": equipe,
-            "BRANCH": branch,
-            "VALIDAÇÃO": validacao,
-            "ABERTURA": abertura,
-            "PRAZO": prazo,
-            "ÚLTIMA MOV": ultima_mov,
-            "ETAPA": etapa,
-            "STATUS": status
+            "SISTEMA": sistema,                       
+            "CRIAÇÃO": abertura,
+            "ÚLTIMA ATUALIZAÇÃO": ultima_mov,
+            "PRAZO": prazo
         }
+         
 
     with ThreadPoolExecutor(max_workers=30) as executor:
         futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]

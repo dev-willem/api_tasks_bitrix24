@@ -3,7 +3,8 @@
     {% for item in dados %}
     <tr>
         {% for coluna in colunas %}
-        <td contenteditable="true">{{ item[coluna] }}</td>
+        <!-- <td contenteditable="true">{{ item[coluna] }}</td> -->
+         <td>{{ item[coluna] }}</td>
         {% endfor %}
     </tr>
     {% endfor %}
