@@ -119,6 +119,17 @@ def get_fields(task_id):
     
     return title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio
 
+def responsible_by_team(equipe, responsavel):
+    if  responsavel == "" or responsavel == "-" or responsavel == "---":
+        if not equipe or equipe == "" or equipe == "-" or equipe == "Desenvolvimento":
+            return "Henrique d'Almeida"
+        elif equipe == "Sustentação":
+            return "Carlos André"
+        elif equipe == "Produtos":
+            return "Tchacyo Lima"
+    else:
+        return responsavel
+
 def get_tasks():
     tasks_filtradas = []
     next_page = None
@@ -151,6 +162,8 @@ def get_tasks():
         status = status_verify(task["STATUS"])
         title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio = get_fields(int(task_id))
 
+        responsavel_etapa = responsible_by_team(equipe, responsavel)
+
         return {
             "ID": task_id,
             "FOCO": prioridade,
@@ -158,7 +171,7 @@ def get_tasks():
             "TASK": title,
             "ETAPA": estagio,
             "ETAPA EQUIPE": equipe, 
-            "ETAPA RESPONSÁVEL": "",
+            "ETAPA RESPONSÁVEL": responsavel_etapa,
             "RESPONSÁVEL": responsavel,
             "SISTEMA": sistema,                       
             "CRIAÇÃO": abertura,
@@ -167,7 +180,7 @@ def get_tasks():
         }
          
 
-    with ThreadPoolExecutor(max_workers=30) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]
 
         for future in as_completed(futures):
