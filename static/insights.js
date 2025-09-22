@@ -8,60 +8,69 @@ function gerarInsights() {
   const linhas = document.querySelectorAll("#tabela-corpo tr");
   const insights = {
     total: 0,
-    status: {},
+    porEtapa: {},
+    porEquipe: {},
     porResponsavel: {},
     vazios: {
       responsavel: [],
       sistema: [],
       equipe: [],
-      branch: [],
-      validacao: [],
       prazo: [],
     },
-    statusAtrasada: [],
+    atrasadas: [],
   };
 
   linhas.forEach((tr) => {
-    const celulas = tr.querySelectorAll("td");
-    const id = celulas[0]?.innerText.trim();
-    const responsavel = celulas[2]?.innerText.trim();
-    const sistema = celulas[3]?.innerText.trim();
-    const equipe = celulas[4]?.innerText.trim();
-    const branch = celulas[5]?.innerText.trim();
-    const validacao = celulas[6]?.innerText.trim();
-    const prazoStr = celulas[8]?.innerText.trim();
-    const status = celulas[11]?.innerText.trim();
+    const CELULAS = tr.querySelectorAll("td");
+    const ID = CELULAS[0]?.innerText.trim();
+    const FOCO = CELULAS[1]?.innerText.trim();
+    const CRIADOR = CELULAS[2]?.innerText.trim();
+    const TASK = CELULAS[3]?.innerText.trim();
+    const ETAPA = CELULAS[4]?.innerText.trim();
+    const ETAPA_EQUIPE = CELULAS[5]?.innerText.trim();
+    const ETAPA_RESP = CELULAS[6]?.innerText.trim();
+    const RESPONSAVEL = CELULAS[7]?.innerText.trim();
+    const SISTEMA = CELULAS[8]?.innerText.trim();
+    const CRIACAO = CELULAS[9]?.innerText.trim();
+    const ULT_ATUALIZACAO = CELULAS[10]?.innerText.trim();
+    const PRAZO = CELULAS[11]?.innerText.trim();
 
     insights.total++;
 
-    // Verificação de campos vazios (ou "---")
-    if (!responsavel || responsavel === "---")
-      insights.vazios.responsavel.push(id);
-    if (!sistema || sistema === "---") insights.vazios.sistema.push(id);
-    if (!equipe || equipe === "---") insights.vazios.equipe.push(id);
-    if (!branch || branch === "---") insights.vazios.branch.push(id);
-    if (!validacao || validacao === "---") insights.vazios.validacao.push(id);
-    if (!prazoStr || prazoStr === "---") insights.vazios.prazo.push(id);
-
-    // Contagem por status
-    if (status) {
-      insights.status[status] = (insights.status[status] || 0) + 1;
+    // Contagem por etapa
+    if (ETAPA) {
+      insights.porEtapa[ETAPA] = (insights.porEtapa[ETAPA] || 0) + 1;
     }
 
-    // Coleta de IDs com status "Atrasada"
-    if (status === "Atrasada") {
-      insights.statusAtrasada.push(id);
+    // Contagem por equipe
+    if (ETAPA_EQUIPE) {
+      insights.porEquipe[ETAPA_EQUIPE] =
+        (insights.porEquipe[ETAPA_EQUIPE] || 0) + 1;
     }
 
     // Contagem por responsável
-    if (responsavel && responsavel !== "---") {
-      insights.porResponsavel[responsavel] =
-        (insights.porResponsavel[responsavel] || 0) + 1;
+    if (RESPONSAVEL && RESPONSAVEL !== "---") {
+      insights.porResponsavel[RESPONSAVEL] =
+        (insights.porResponsavel[RESPONSAVEL] || 0) + 1;
+    }
+
+    // Campos vazios
+    if (!RESPONSAVEL || RESPONSAVEL === "---") insights.vazios.responsavel.push(ID);
+    if (!SISTEMA || SISTEMA === "---") insights.vazios.sistema.push(ID);
+    if (!ETAPA_EQUIPE || ETAPA_EQUIPE === "---") insights.vazios.equipe.push(ID);
+    if (!PRAZO || PRAZO === "---") insights.vazios.prazo.push(ID);
+
+    // Prazo atrasado
+    if (PRAZO && PRAZO !== "---") {
+      const prazoDate = new Date(PRAZO);
+      const hoje = new Date();
+      if (!isNaN(prazoDate.getTime()) && prazoDate < hoje) {
+        insights.atrasadas.push(ID);
+      }
     }
   });
 
   exibirInsights(insights);
-
   return insights;
 }
 
@@ -76,21 +85,26 @@ function exibirInsights(insights) {
 
   html += `<p>Total de tarefas: <strong>${insights.total}</strong></p>`;
 
-  html += `<p><strong>Status:</strong><ul>`;
-  for (const [status, count] of Object.entries(insights.status)) {
-    html += `<li>${status}: ${count}</li>`;
+  html += `<p><strong>Tarefas por Etapa:</strong><ul>`;
+  for (const [etapa, count] of Object.entries(insights.porEtapa)) {
+    html += `<li>${etapa}: ${count}</li>`;
   }
   html += `</ul></p>`;
 
-  html += `<p><strong>Quantidade de tarefas de cada componente:</strong><ul>`;
+  html += `<p><strong>Tarefas por Equipe:</strong><ul>`;
+  for (const [equipe, count] of Object.entries(insights.porEquipe)) {
+    html += `<li>${equipe}: ${count}</li>`;
+  }
+  html += `</ul></p>`;
+
+  html += `<p><strong>Tarefas por Responsável:</strong><ul>`;
   for (const [nome, count] of Object.entries(insights.porResponsavel)) {
     html += `<li>${nome}: ${count}</li>`;
   }
   html += `</ul></p>`;
 
-  html += `<p><strong>Listas de tarefas atrasadas:</strong> ${
-    insights.statusAtrasada.length
-  } ${formatarIDs(insights.statusAtrasada)}</p>`;
+  html += `<p><strong>Tarefas atrasadas:</strong> ${insights.atrasadas.length
+    } ${formatarIDs(insights.atrasadas)}</p>`;
 
   html += `<p><strong>Tarefas com campos não preenchidos:</strong><ul>`;
   html += `<li>Responsável: ${insights.vazios.responsavel.length} ${formatarIDs(
@@ -98,15 +112,6 @@ function exibirInsights(insights) {
   )}</li>`;
   html += `<li>Sistema: ${insights.vazios.sistema.length} ${formatarIDs(
     insights.vazios.sistema
-  )}</li>`;
-  html += `<li>Equipe: ${insights.vazios.equipe.length} ${formatarIDs(
-    insights.vazios.equipe
-  )}</li>`;
-  html += `<li>Branch: ${insights.vazios.branch.length} ${formatarIDs(
-    insights.vazios.branch
-  )}</li>`;
-  html += `<li>Validação: ${insights.vazios.validacao.length} ${formatarIDs(
-    insights.vazios.validacao
   )}</li>`;
   html += `<li>Prazo: ${insights.vazios.prazo.length} ${formatarIDs(
     insights.vazios.prazo

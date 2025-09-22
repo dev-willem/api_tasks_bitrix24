@@ -14,9 +14,9 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
 
   const colorTitulo = [26, 4, 59]; // rgb(26, 4, 59)
   const colorVerde = [97, 191, 26]; // rgb(97, 191, 26)
-  const colorTexto = [51, 51, 51]; // #333 (aprox)
-  const colorTextoClaro = [119, 119, 119]; // #777
+  const colorTexto = [51, 51, 51]; // #333
 
+  // Exporta tabela em PDF
   doc.autoTable({
     html: "#tabela",
     startY: finalY,
@@ -62,13 +62,11 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
     const bulletRadius = 0.4;
     const lineHeight = 4;
     const bulletOffsetX = marginX + 5;
-    const colorTitulo = [26, 4, 59];
-    const colorVerde = [97, 191, 26];
-    const colorTexto = [51, 51, 51];
     const fontSizeTitulo = 12;
     const fontSizeNormal = 9;
     const fontSizeTituloSecundario = 10;
 
+    // Título "INSIGHTS"
     doc.setFontSize(fontSizeTitulo);
     doc.setTextColor(...colorTitulo);
     doc.setFont(undefined, "bold");
@@ -81,20 +79,22 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
     finalY += 10;
     finalY = checkAddPage(finalY);
 
+    // Total de tarefas
     doc.setFontSize(fontSizeNormal);
     doc.setTextColor(...colorTexto);
     doc.setFont(undefined, "normal");
     doc.text(`Total de tarefas: ${insights.total}`, marginX, finalY);
 
+    // --- Tarefas por etapa ---
     finalY += 6;
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "bold");
     doc.setFontSize(fontSizeTituloSecundario);
-    doc.text("Status:", marginX, finalY);
+    doc.text("Tarefas por Etapa:", marginX, finalY);
 
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
-    Object.entries(insights.status).forEach(([key, val]) => {
+    Object.entries(insights.porEtapa).forEach(([key, val]) => {
       finalY += lineHeight;
       finalY = checkAddPage(finalY);
       doc.setFillColor(...colorVerde);
@@ -103,11 +103,30 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
       doc.text(`${key}: ${val}`, bulletOffsetX, finalY);
     });
 
-    finalY += 5;
+    // --- Tarefas por equipe ---
+    finalY += 6;
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "bold");
     doc.setFontSize(fontSizeTituloSecundario);
-    doc.text("Por responsável:", marginX, finalY);
+    doc.text("Tarefas por Equipe:", marginX, finalY);
+
+    doc.setFont(undefined, "normal");
+    doc.setFontSize(fontSizeNormal);
+    Object.entries(insights.porEquipe).forEach(([key, val]) => {
+      finalY += lineHeight;
+      finalY = checkAddPage(finalY);
+      doc.setFillColor(...colorVerde);
+      doc.circle(marginX + 3, finalY - 1, bulletRadius, "F");
+      doc.setTextColor(...colorTexto);
+      doc.text(`${key}: ${val}`, bulletOffsetX, finalY);
+    });
+
+    // --- Tarefas por responsável ---
+    finalY += 6;
+    finalY = checkAddPage(finalY);
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(fontSizeTituloSecundario);
+    doc.text("Tarefas por Responsável:", marginX, finalY);
 
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
@@ -120,20 +139,21 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
       doc.text(`${key}: ${val}`, bulletOffsetX, finalY);
     });
 
-    finalY += 5;
+    // --- Tarefas atrasadas ---
+    finalY += 6;
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "bold");
     doc.setFontSize(fontSizeTituloSecundario);
-    doc.text("Tarefas com status 'Atrasada':", marginX, finalY);
+    doc.text("Tarefas atrasadas:", marginX, finalY);
 
     finalY += lineHeight;
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
-    doc.text(`Total: ${insights.statusAtrasada.length}`, bulletOffsetX, finalY);
+    doc.text(`Total: ${insights.atrasadas.length}`, bulletOffsetX, finalY);
 
-    if (insights.statusAtrasada.length) {
-      const ids = insights.statusAtrasada.join(", ");
+    if (insights.atrasadas.length) {
+      const ids = insights.atrasadas.join(", ");
       finalY += lineHeight;
       finalY = checkAddPage(finalY);
       doc.setFontSize(8);
@@ -149,11 +169,12 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
       doc.setTextColor(...colorTexto);
     }
 
-    finalY += 5;
+    // --- Campos vazios ---
+    finalY += 6;
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "bold");
     doc.setFontSize(fontSizeTituloSecundario);
-    doc.text('Lista de IDs com campos vazios "---":', marginX, finalY);
+    doc.text('Tarefas com campos não preenchidos:', marginX, finalY);
 
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
@@ -183,6 +204,7 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
       }
     }
 
+    // Salvar PDF
     doc.save("tarefas-bitrix.pdf");
   }, 100);
 });

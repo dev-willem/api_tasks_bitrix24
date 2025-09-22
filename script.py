@@ -8,36 +8,11 @@ import os
 
 load_dotenv()
 
-COMPLETED_TASKS_STATUS_CODE = "5"
+# COMPLETED_TASKS_STATUS_CODE = "5"
 GROUP_NAME = os.getenv('GROUP_NAME')
 USER_ID = os.getenv('USER_ID')
 TOKEN = os.getenv('TOKEN')
 WEBHOOK_URL = f"https://{GROUP_NAME}.bitrix24.com.br/rest/{USER_ID}/{TOKEN}/"
-
-def status_verify(status):
-    match status:
-        case "-3":
-            return "Em andamento"
-        case "-2":
-            return "Não lida"
-        case "-1":
-            return "Atrasada"
-        case "1":
-            return "Nova"
-        case "2":
-            return "Pendente"
-        case "3":
-            return "Em andamento"
-        case "4":
-            return "Supostamente concluída"
-        case "5":
-            return "Concluída"
-        case "6":
-            return "Adiada"
-        case "7":
-            return "Recusada"
-        case _:
-            return "Status desconhecido"
 
 def priority_verify(priority):
     match priority:
@@ -88,39 +63,37 @@ def time_date_format(data_iso):
             dt_local = dt.astimezone()
             return dt_local.strftime("%d/%m/%Y %H:%M")
         except ValueError:
-            return "---"
-    return "---"
+            return ""
+    return ""
 
 def false_none(field):
     if field == False or field == None:
-        field = "---"
+        field = ""
     return field
 
 def get_fields(task_id):
     response_fields = requests.get(f"{WEBHOOK_URL}task.item.getdata/", params={"taskid": task_id})
-    print(f"{WEBHOOK_URL}task.item.getdata/?taskid={task_id}") # REMOVE AFTER
     data_fields = response_fields.json()
     fields = data_fields.get("result", [])
     
     title = fields.get("TITLE", "")
     #etapa = status_verify(fields.get("REAL_STATUS"))
-    prazo = time_date_format(fields.get("DEADLINE", "---"))
-    abertura = time_date_format(fields.get("CREATED_DATE"))
-    estagio = stage_verify(fields.get("STAGE_ID"))
-    print(fields.get("STAGE_ID"))
-    print(estagio)
-    ultima_mov = time_date_format(fields.get("CHANGED_DATE"))
-    prioridade = priority_verify(fields.get("PRIORITY"))
+    prazo = time_date_format(fields.get("DEADLINE", ""))
+    abertura = time_date_format(fields.get("CREATED_DATE", ""))
+    estagio = stage_verify(fields.get("STAGE_ID", ""))
+    print("\n", fields.get("STAGE_ID"), estagio)
+    ultima_mov = time_date_format(fields.get("CHANGED_DATE", ""))
+    prioridade = priority_verify(fields.get("PRIORITY", ""))
     criado_por = f"{fields.get("CREATED_BY_NAME")} {fields.get("CREATED_BY_LAST_NAME")}"
-    responsavel = false_none(fields.get("UF_AUTO_298159569350", "---"))
-    sistema = false_none(fields.get("UF_AUTO_576718929338", "---"))[0] # por algum motivo vem uma lista de sistemas com apenas 1
-    equipe = false_none(fields.get("UF_AUTO_718901754199", "---"))
-    validacao = false_none(fields.get("UF_AUTO_558363595553", "---"))
+    responsavel = false_none(fields.get("UF_AUTO_298159569350", ""))
+    sistemas = fields.get("UF_AUTO_576718929338", []) # por algum motivo vem uma lista de sistemas com apenas 1
+    sistema = sistemas[0] if sistemas else ""
+    equipe = fields.get("UF_AUTO_718901754199", "")
     
-    return title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio
+    return title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, prioridade, criado_por, estagio
 
 def responsible_by_team(equipe, responsavel):
-    if  responsavel == "" or responsavel == "-" or responsavel == "---":
+    if  responsavel == "" or responsavel == "-":
         if not equipe or equipe == "" or equipe == "-" or equipe == "Desenvolvimento":
             return "Henrique d'Almeida"
         elif equipe == "Sustentação":
@@ -136,12 +109,12 @@ def get_tasks():
 
     while True:
         params = {"start": next_page} if next_page else {}
-        print(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&")
+        # print(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&")
         response = requests.get(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&", params=params)
         data = response.json()
         
         filtradas = [
-            {"ID": item["ID"], "STATUS": item["STATUS"]}
+            {"ID": item["ID"]}
             for item in data.get("result", [])
             # if item["STATUS"] != COMPLETED_TASKS_STATUS_CODE # -> filtro aplicado direto na url (inibe necessidade de paginação, pois vem menos que 50)
         ]
@@ -153,14 +126,11 @@ def get_tasks():
         if not next_page:
             break
 
-    print("Iniciando paralelismo para buscar detalhes...")
-
+    print("Iniciando busca por detalhes...")
     tasks_final = []
-
     def enrich_task(task):
         task_id = task["ID"]
-        status = status_verify(task["STATUS"])
-        title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, validacao, prioridade, criado_por, estagio = get_fields(int(task_id))
+        title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, prioridade, criado_por, estagio = get_fields(int(task_id))
 
         responsavel_etapa = responsible_by_team(equipe, responsavel)
 
@@ -179,7 +149,7 @@ def get_tasks():
             "PRAZO": prazo
         }
          
-
+    # removido o paralelismo para gerar a planilha em ordem de ID ascendente
     with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]
 
