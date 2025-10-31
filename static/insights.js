@@ -55,9 +55,11 @@ function gerarInsights() {
     }
 
     // Campos vazios
-    if (!RESPONSAVEL || RESPONSAVEL === "---") insights.vazios.responsavel.push(ID);
+    if (!RESPONSAVEL || RESPONSAVEL === "---")
+      insights.vazios.responsavel.push(ID);
     if (!SISTEMA || SISTEMA === "---") insights.vazios.sistema.push(ID);
-    if (!ETAPA_EQUIPE || ETAPA_EQUIPE === "---") insights.vazios.equipe.push(ID);
+    if (!ETAPA_EQUIPE || ETAPA_EQUIPE === "---")
+      insights.vazios.equipe.push(ID);
     if (!PRAZO || PRAZO === "---") insights.vazios.prazo.push(ID);
 
     // Prazo atrasado
@@ -86,9 +88,38 @@ function exibirInsights(insights) {
   html += `<p>Total de tarefas: <strong>${insights.total}</strong></p>`;
 
   html += `<p><strong>Tarefas por Etapa:</strong><ul>`;
-  for (const [etapa, count] of Object.entries(insights.porEtapa)) {
+  const mostradas = new Set(); 
+  const ordemEtapa = [
+    "Triagem/Análise",
+    "Aguardando Informações",
+    "Backlog de Produtos",
+    "Refinamento Produtos",
+    "Pronto para desenvolvimento",
+    "Em desenvolvimento",
+    "Code Review",
+    "Deploy em Homologação",
+    "Validação de Sustentação",
+    "Validação de Produtos",
+    "Retorno",
+    "Aguardando Deploy Produção",
+    "Deploy Produção",
+    "Adiada",
+    "Concluída",
+  ];
+  for (const etapa of ordemEtapa) {
+    const count = insights.porEtapa[etapa] || 0;
     html += `<li>${etapa}: ${count}</li>`;
+    mostradas.add(etapa);
   }
+  // mostra etapas extras
+  for (const [etapa, count] of Object.entries(insights.porEtapa)) {
+    if (!mostradas.has(etapa)) {
+      html += `<li>${etapa}: ${count}</li>`;
+    }
+  }
+  // for (const [etapa, count] of Object.entries(insights.porEtapa)) {
+  //   html += `<li>${etapa}: ${count}</li>`;
+  // }
   html += `</ul></p>`;
 
   html += `<p><strong>Tarefas por Equipe:</strong><ul>`;
@@ -103,8 +134,9 @@ function exibirInsights(insights) {
   }
   html += `</ul></p>`;
 
-  html += `<p><strong>Tarefas atrasadas:</strong> ${insights.atrasadas.length
-    } ${formatarIDs(insights.atrasadas)}</p>`;
+  html += `<p><strong>Tarefas atrasadas:</strong> ${
+    insights.atrasadas.length
+  } ${formatarIDs(insights.atrasadas)}</p>`;
 
   html += `<p><strong>Tarefas com campos não preenchidos:</strong><ul>`;
   html += `<li>Responsável: ${insights.vazios.responsavel.length} ${formatarIDs(

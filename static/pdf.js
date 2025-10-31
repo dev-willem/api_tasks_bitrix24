@@ -94,14 +94,47 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
 
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
-    Object.entries(insights.porEtapa).forEach(([key, val]) => {
+
+    const mostradas = new Set();
+    const ordemEtapa = [
+      "Triagem/Análise",
+      "Aguardando Informações",
+      "Backlog de Produtos",
+      "Refinamento Produtos",
+      "Pronto para desenvolvimento",
+      "Em desenvolvimento",
+      "Code Review",
+      "Deploy em Homologação",
+      "Validação de Sustentação",
+      "Validação de Produtos",
+      "Retorno",
+      "Aguardando Deploy Produção",
+      "Deploy Produção",
+      "Adiada",
+      "Concluída",
+    ];
+    // Primeiro, exibe as etapas na ordem fixa
+    for (const etapa of ordemEtapa) {
+      const count = insights.porEtapa[etapa] || 0;
       finalY += lineHeight;
       finalY = checkAddPage(finalY);
       doc.setFillColor(...colorVerde);
       doc.circle(marginX + 3, finalY - 1, bulletRadius, "F");
       doc.setTextColor(...colorTexto);
-      doc.text(`${key}: ${val}`, bulletOffsetX, finalY);
-    });
+      doc.text(`${etapa}: ${count}`, bulletOffsetX, finalY);
+      mostradas.add(etapa);
+    }
+    // Depois, exibe etapas extras (caso existam novas não previstas)
+    for (const [etapa, count] of Object.entries(insights.porEtapa)) {
+      if (!mostradas.has(etapa)) {
+        finalY += lineHeight;
+        finalY = checkAddPage(finalY);
+        doc.setFillColor(...colorVerde);
+        doc.circle(marginX + 3, finalY - 1, bulletRadius, "F");
+        doc.setTextColor(...colorTexto);
+        doc.text(`${etapa}: ${count}`, bulletOffsetX, finalY);
+      }
+    }
 
     // --- Tarefas por equipe ---
     finalY += 6;
@@ -174,7 +207,7 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
     finalY = checkAddPage(finalY);
     doc.setFont(undefined, "bold");
     doc.setFontSize(fontSizeTituloSecundario);
-    doc.text('Tarefas com campos não preenchidos:', marginX, finalY);
+    doc.text("Tarefas com campos não preenchidos:", marginX, finalY);
 
     doc.setFont(undefined, "normal");
     doc.setFontSize(fontSizeNormal);
