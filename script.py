@@ -113,12 +113,7 @@ def get_tasks():
         response = requests.get(f"{WEBHOOK_URL}task.item.list/?ORDER[ID]=asc&FILTER[!STATUS]=5&", params=params)
         data = response.json()
         
-        filtradas = [
-            {"ID": item["ID"]}
-            for item in data.get("result", [])
-            # if item["STATUS"] != COMPLETED_TASKS_STATUS_CODE # -> filtro aplicado direto na url (inibe necessidade de paginação, pois vem menos que 50)
-        ]
-
+        filtradas = [{"ID": item["ID"]} for item in data.get("result", [])]
         tasks_filtradas.extend(filtradas)
         next_page = data.get("next")
 
@@ -128,12 +123,11 @@ def get_tasks():
 
     print("Iniciando busca por detalhes...")
     tasks_final = []
+
     def enrich_task(task):
         task_id = task["ID"]
         title, prazo, abertura, ultima_mov, responsavel, sistema, equipe, prioridade, criado_por, estagio = get_fields(int(task_id))
-
         responsavel_etapa = responsible_by_team(equipe, responsavel)
-
         return {
             "ID": task_id,
             "FOCO": prioridade,
@@ -148,11 +142,9 @@ def get_tasks():
             "ÚLTIMA ATUALIZAÇÃO": ultima_mov,
             "PRAZO": prazo
         }
-         
-    # removido o paralelismo para gerar a planilha em ordem de ID ascendente
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]
 
+    with ThreadPoolExecutor(max_workers=30) as executor:
+        futures = [executor.submit(enrich_task, task) for task in tasks_filtradas]
         for future in as_completed(futures):
             try:
                 enriched_task = future.result()
@@ -160,5 +152,8 @@ def get_tasks():
             except Exception as e:
                 print("Erro ao processar tarefa:", e)
 
-    print(f"\n{len(tasks_final)} tarefas armazenadas com sucesso!")
+    tasks_final.sort(key=lambda t: int(t["ID"]))
+
+    print(f"\n {len(tasks_final)} tarefas armazenadas e ordenadas com sucesso!")
+
     return tasks_final
