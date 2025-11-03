@@ -238,7 +238,21 @@ document.getElementById("exportar-btn").addEventListener("click", function () {
     }
 
     // Salvar PDF
-    doc.save("tarefas-bitrix.pdf");
+    const agora = new Date();
+    
+    // Função para adicionar zero à esquerda, se necessário
+    const pad = (num) => String(num).padStart(2, "0");
+
+    const ano = agora.getFullYear();
+    const mes = pad(agora.getMonth() + 1);
+    const dia = pad(agora.getDate());
+    const hora = pad(agora.getHours());
+    const minuto = pad(agora.getMinutes());
+
+    // Monta a string no formato desejado
+    const dataFormatada = `${ano}${mes}${dia}-${hora}:${minuto}`;
+
+    doc.save(`${dataFormatada}-tarefas-bitrix.pdf`);
   }, 100);
 });
 
