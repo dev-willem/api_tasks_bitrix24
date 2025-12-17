@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template
 from script import get_tasks
 
 app = Flask(__name__)
@@ -13,3 +13,6 @@ def index():
 def gerar():
     dados = get_tasks()
     return render_template("table_body.html", colunas=COLUNAS, dados=dados)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

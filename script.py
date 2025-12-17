@@ -2,8 +2,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from dotenv import load_dotenv
 import requests
-import math
-import csv
 import os
 
 load_dotenv()
